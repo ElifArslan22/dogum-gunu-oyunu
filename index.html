@@ -13,18 +13,17 @@
       font-family: sans-serif;
       user-select: none;
     }
-    canvas {
-      background: linear-gradient(#181616, #222);
-      display: block;
-      margin: 0 auto;
-      border: 2px solid #282727;
-      border-radius: 10px;
-      margin-top: 20px;
-      width: 96vw;
-      max-width: 600px;
-      height: auto;
-      max-height: 80vh;
-    }
+   canvas {
+  display: block;
+  margin: 0 auto;
+  border: 2px solid #282727;
+  border-radius: 10px;
+  background: linear-gradient(#181616, #222);
+  width: 100vw;         /* Tüm ekran genişliği */
+  height: 60vw;         /* Oranlı yükseklik (ör: 3:2 oranı için) */
+  max-width: 600px;     /* Masaüstünde sınır */
+  max-height: 400px;    /* Masaüstünde sınır */
+}
     #message {
       position: absolute;
       top: 40%;
@@ -61,13 +60,19 @@
 
     // Responsive canvas
     function resizeCanvas() {
-      let w = Math.min(window.innerWidth - 20, 600);
-      let h = Math.min(window.innerHeight - 80, 400);
-      canvas.width = w;
-      canvas.height = h;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+  let w = Math.min(window.innerWidth, 600);
+  let h = Math.min(window.innerHeight, 400);
+
+  // Mobilde ekranı daha iyi doldurmak için oranı koru
+  if (window.innerWidth < 600) {
+    w = window.innerWidth;
+    h = w * 2 / 3; // 3:2 oranı (daha kare için 1:1, daha yatay için 9/16 kullanabilirsin)
+  }
+  canvas.width = w;
+  canvas.height = h;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
     // Ses elemanları
     const jumpSound = document.getElementById('jumpSound');
@@ -169,7 +174,7 @@
     // Oyun durumu
     let frames = 0;
     let gameOver = false;
-    let speed = 5;
+    let speed = 6.5;
     let score = 0;
     let gameStarted = false;
 
@@ -236,7 +241,7 @@
       drawPlayer();
 
       // Oyuncu fiziği (yerçekimi ve zıplama)
-      player.vy += 0.6;
+      player.vy += 0.5;
       player.y += player.vy;
       if (player.y > canvas.height - 100) {
         player.y = canvas.height - 100;
@@ -324,7 +329,9 @@
     });
 
     // Mobil dokunmatik desteği
-   canvas.addEventListener('touchstart', function(e) {
+let touchStartY = null;
+
+canvas.addEventListener('touchstart', function(e) {
   if (!gameStarted) {
     gameStarted = true;
     message.style.display = 'none';
@@ -332,14 +339,26 @@
     update();
     return;
   }
-  if (!player.jump && !gameOver && gameStarted) {
-    player.vy = -12;
-    player.jump = true;
-    jumpSound.currentTime = 0;
-    jumpSound.play();
-  }
+  // Oyun başladıysa, yukarı kaydırma için başlangıç Y koordinatını kaydet
+  touchStartY = e.touches[0].clientY;
+});
+
+canvas.addEventListener('touchend', function(e) {
+  if (!gameStarted) return;
   if (gameOver) {
     resetGame();
+    return;
+  }
+  if (touchStartY !== null) {
+    let touchEndY = e.changedTouches[0].clientY;
+    // Yeterince yukarı kaydırıldıysa zıpla
+    if (touchStartY - touchEndY > 40 && !player.jump) {
+      player.vy = -14;
+      player.jump = true;
+      jumpSound.currentTime = 0;
+      jumpSound.play();
+    }
+    touchStartY = null;
   }
 });
 
