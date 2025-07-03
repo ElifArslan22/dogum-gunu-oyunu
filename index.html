@@ -205,9 +205,8 @@ resizeCanvas();
     function showWelcome() {
       showMessage(`
         <b>Doğum Gününe Yetiş!<br>
-        Hoşgeldin Minik Bebek(Artık değil sanırım)!<br>
          <img src="ahmet.png" width="250" style="margin:20px 0;"><br>
-        <b>Başlamak için dokun!
+        <b>Başlamak için ekranı yatay çevir, yukarı kaydır!
       `);
     }
 
@@ -272,7 +271,7 @@ resizeCanvas();
         ) {
           gameOver = true;
           gameBeat1.pause();
-          showMessage(`🤡 Oğlum burda da yanmazsın!<br>Skor: ${score}<br><br>Tekrar oynamak için dokun.`);
+          showMessage(`🤡 Oğlum burda da yanmazsın!<br>Skor: ${score}<br><br>Tekrar oynamak için yukarı kaydır.`);
         }
 
         // Engel geçildiğinde skor arttır
@@ -296,10 +295,9 @@ resizeCanvas();
       if (score >= 20) {
         gameOver = true;
         gameBeat1.pause();
-        showMessage(`🎉 Harika! hayatında önüne çıkan tüm engelleri aşarak 18 Yaşına Yetiştin!<br>
-          Doğum Günün Kutlu Olsun AHMET! 🎂<br>
+        showMessage(`🎉Doğum Günün Kutlu Olsun AHMET! 🎂<br>
           <img src="happy.png" width="300" style="margin-top:20px;"><br>
-          <br>Tekrar oynamak için dokun.`);
+          Tekrar oynamak için yukarı kaydır.`);
       }
 
       frames++;
