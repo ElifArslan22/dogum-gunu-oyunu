@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doğum Gününe Yetiş!</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #222;
+      color: white;
+      font-family: sans-serif;
+      user-select: none;
+    }
+    canvas {
+      background: linear-gradient(#181616, #222);
+      display: block;
+      margin: 0 auto;
+      border: 2px solid #282727;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 96vw;
+      max-width: 600px;
+      height: auto;
+      max-height: 80vh;
+    }
+    #message {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 5vw;
+      min-width: 200px;
+      max-width: 90vw;
+      background: rgba(12, 17, 172, 0.8);
+      padding: 25px 40px;
+      display: none;
+      border-radius: 15px;
+      text-align: center;
+      line-height: 1.4;
+      box-shadow: 0 0 15px orange;
+      z-index: 10;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="600" height="400"></canvas>
+  <div id="message"></div>
+
+  <!-- Sesler -->
+  <audio id="jumpSound" src="jump.mp3" preload="auto"></audio>
+  <audio id="gameBeat1" src="gamebeat1.mp3" preload="auto" loop></audio>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+
+    // Responsive canvas
+    function resizeCanvas() {
+      let w = Math.min(window.innerWidth - 20, 600);
+      let h = Math.min(window.innerHeight - 80, 400);
+      canvas.width = w;
+      canvas.height = h;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Ses elemanları
+    const jumpSound = document.getElementById('jumpSound');
+    const gameBeat1 = document.getElementById('gameBeat1');
+    gameBeat1.volume = 0.4;
+
+    // Motor görseli
+    const motorImg = new Image();
+    motorImg.src = 'motor.png';
+
+    const cityImg = new Image();
+    cityImg.src = 'sehir.png';
+
+    function drawBackground() {
+      if (cityImg.complete) {
+        ctx.drawImage(cityImg, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#444';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      // Skora göre arka plana yazı ekle
+      ctx.save();
+      ctx.font = "bold " + Math.floor(canvas.height / 12) + "px Arial";
+      ctx.textAlign = "center";
+      ctx.globalAlpha = 0.4;
+      if (score >= 5 && score < 10) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "##8B008B"; // Canlı pembe/turuncu
+  ctx.shadowColor = "#fff176";
+  ctx.shadowBlur = 18;
+        ctx.fillText("Rahat ol şampiyon!", canvas.width / 2, 100);
+         ctx.shadowBlur = 0; 
+         // Minik görseli ekle
+    let img = new Image();
+    img.src = "hilal.png"; // Görsel dosyanızın adı
+    img.onload = function() {
+
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160); // Ortada ve küçük boyutta
+     
+    }
+    // Eğer görsel daha önce yüklendiyse hemen çiz
+    if (img.complete) {
+     // ctx.globalAlpha = 1;
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160);
+     // ctx.globalAlpha = 0.4;
+    }
+      } else if (score >= 10 && score < 15) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#FF69B4";
+          ctx.shadowColor = "#fff176";
+         ctx.shadowBlur = 18;
+         ctx.fillText("Helal Lan Yusufi!", canvas.width / 2, 100);
+        ctx.shadowBlur = 0;
+    
+        let img = new Image();
+    img.src = "elif.png"; // Görsel dosyanızın adı
+    img.onload = function() {
+
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160); // Ortada ve küçük boyutta
+     
+    }
+    // Eğer görsel daha önce yüklendiyse hemen çiz
+    if (img.complete) {
+     
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160);
+      
+    }
+      } else if (score >= 15) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "red";
+         ctx.shadowColor = "#fff176";
+         ctx.shadowBlur = 18;
+         ctx.fillText("AAAAAAAAA ÇOK YAKLAŞTIN!", canvas.width / 2, 100);
+        ctx.shadowBlur = 0;
+         let img = new Image();
+    img.src = "hazal1.png"; // Görsel dosyanızın adı
+    img.onload = function() {
+
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160); // Ortada ve küçük boyutta
+     
+    }
+    // Eğer görsel daha önce yüklendiyse hemen çiz
+    if (img.complete) {
+    
+      ctx.drawImage(img, canvas.width / 2 - 80, 120, 120, 160);
+      
+    }
+      }
+      
+      ctx.restore();
+    }
+
+    // Oyuncu (motorcu) objesi
+    let player = { x: 50, y: 300, w: 60, h: 40, vy: 0, jump: false };
+
+    // Engeller
+    let obstacles = [];
+
+    // Oyun durumu
+    let frames = 0;
+    let gameOver = false;
+    let speed = 5;
+    let score = 0;
+    let gameStarted = false;
+
+    function drawPlayer() {
+      if (motorImg.complete) {
+        ctx.drawImage(motorImg, player.x, player.y, player.w, player.h);
+      } else {
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+      }
+    }
+
+    let symbols = ['🥷🏻', '💣', '📚', '🍾', '🎓', '🎲', '💪', '🏆','👱🏻‍♀️'];
+
+    function drawObstacle(obs) {
+      ctx.font = `${obs.h + 10}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(obs.symbol, obs.x, obs.y + obs.h);
+    }
+
+    function showMessage(text) {
+      message.innerHTML = text;
+      message.style.display = 'block';
+      message.scrollTop = 0;
+    }
+
+    function showWelcome() {
+      showMessage(`
+        <b>Doğum Gününe Yetiş!<br>
+        Hoşgeldin Minik Bebek(Artık değil sanırım)!<br>
+         <img src="ahmet.png" width="250" style="margin:20px 0;"><br>
+        <b>Başlamak için dokun!
+      `);
+    }
+
+    function resetGame() {
+      obstacles = [];
+      frames = 0;
+      score = 0;
+      speed = 5;
+      player.y = 300;
+      player.vy = 0;
+      player.jump = false;
+      gameOver = false;
+      message.style.display = 'none';
+      gameBeat1.play();
+      update();
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Şehir arka planı
+      drawBackground();
+
+      // Zemin
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+      // Oyuncu
+      drawPlayer();
+
+      // Oyuncu fiziği (yerçekimi ve zıplama)
+      player.vy += 0.6;
+      player.y += player.vy;
+      if (player.y > canvas.height - 100) {
+        player.y = canvas.height - 100;
+        player.vy = 0;
+        player.jump = false;
+      }
+
+      // Engel yaratma
+      if (frames % 90 === 0) {
+        let h = 20 + Math.random() * 20;
+        let w = 20 + Math.random() * 20;
+        let symbol = symbols[Math.floor(Math.random() * symbols.length)];
+        obstacles.push({ x: canvas.width, y: canvas.height - 60 - h, w: w, h: h, passed: false, symbol: symbol });
+      }
+
+      // Engelleri çiz ve hareket ettir
+      for (let i = 0; i < obstacles.length; i++) {
+        let obs = obstacles[i];
+        obs.x -= speed * (canvas.width / 600); // Hız ekran boyutuna göre ayarlanır
+        drawObstacle(obs);
+
+        // Çarpışma kontrolü
+        if (
+          player.x < obs.x + obs.w &&
+          player.x + player.w > obs.x &&
+          player.y < obs.y + obs.h &&
+          player.y + player.h > obs.y
+        ) {
+          gameOver = true;
+          gameBeat1.pause();
+          showMessage(`🤡 Oğlum burda da yanmazsın!<br>Skor: ${score}<br><br>Tekrar oynamak için dokun.`);
+        }
+
+        // Engel geçildiğinde skor arttır
+        if (!obs.passed && obs.x + obs.w < player.x) {
+          score++;
+          obs.passed = true;
+
+          // Her 5 engelde hızı arttır
+          if (score % 5 === 0) {
+            speed += 3;
+          }
+        }
+      }
+
+      // Skoru göster
+      ctx.fillStyle = 'white';
+      ctx.font = Math.floor(canvas.height / 18) + 'px Arial';
+      ctx.fillText('Skor: ' + score, 10, 30);
+
+      // Doğum günü kutlama koşulu
+      if (score >= 20) {
+        gameOver = true;
+        gameBeat1.pause();
+        showMessage(`🎉 Harika! hayatında önüne çıkan tüm engelleri aşarak 18 Yaşına Yetiştin!<br>
+          Doğum Günün Kutlu Olsun AHMET! 🎂<br>
+          <img src="happy.png" width="300" style="margin-top:20px;"><br>
+          <br>Tekrar oynamak için dokun.`);
+      }
+
+      frames++;
+      if (!gameOver) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    // Klavye kontrolleri
+    document.addEventListener('keydown', e => {
+      if ((e.code === 'Space' || e.code === 'ArrowUp') && !player.jump && !gameOver && gameStarted) {
+        player.vy = -12;
+        player.jump = true;
+        jumpSound.currentTime = 0;
+        jumpSound.play();
+      }
+      if (e.code === 'Enter') {
+        if (!gameStarted) {
+          gameStarted = true;
+          message.style.display = 'none';
+          gameBeat1.play();
+          update();
+        } else if (gameOver) {
+          resetGame();
+        }
+      }
+    });
+
+    // Mobil dokunmatik desteği
+   canvas.addEventListener('touchstart', function(e) {
+  if (!gameStarted) {
+    gameStarted = true;
+    message.style.display = 'none';
+    gameBeat1.play();
+    update();
+    return;
+  }
+  if (!player.jump && !gameOver && gameStarted) {
+    player.vy = -12;
+    player.jump = true;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
+  }
+  if (gameOver) {
+    resetGame();
+  }
+});
+
+    showWelcome();
+  </script>
+</body>
+</html>
